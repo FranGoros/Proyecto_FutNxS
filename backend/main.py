@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import crear_tablas, conectar
 from pydantic import BaseModel
 
+
 app = FastAPI(title="Fútbol 5 Stats")
 
 
@@ -22,19 +23,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 crear_tablas()
+
 
 class Jugador(BaseModel):
     nombre: str
-    
+
+
 class Partido(BaseModel):
     fecha: str
     goles_a: int
     goles_b: int
 
-# ENDPOINTS
 
-# Inicio
+# =========================
+# INICIO
+# =========================
+
 @app.get("/")
 def inicio():
     return {
@@ -42,14 +48,20 @@ def inicio():
     }
 
 
-# Crea un jugador y lo agrega a la tabla jugadores
+# =========================
+# JUGADORES
+# =========================
+
 @app.post("/jugadores")
 def crear_jugador(jugador: Jugador):
     conexion = conectar()
     cursor = conexion.cursor()
 
     cursor.execute(
-        "INSERT INTO jugadores (nombre) VALUES (?)",
+        """
+        INSERT INTO jugadores (nombre)
+        VALUES (%s)
+        """,
         (jugador.nombre,)
     )
 
@@ -61,14 +73,18 @@ def crear_jugador(jugador: Jugador):
         "nombre": jugador.nombre
     }
 
-# Elimina un jugador de la tabla jugadores
+
 @app.delete("/jugadores/{jugador_id}")
 def eliminar_jugador(jugador_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
     cursor.execute(
-        "SELECT * FROM jugadores WHERE id = ?",
+        """
+        SELECT *
+        FROM jugadores
+        WHERE id = %s
+        """,
         (jugador_id,)
     )
 
@@ -82,7 +98,10 @@ def eliminar_jugador(jugador_id: int):
         )
 
     cursor.execute(
-        "DELETE FROM jugadores WHERE id = ?",
+        """
+        DELETE FROM jugadores
+        WHERE id = %s
+        """,
         (jugador_id,)
     )
 
@@ -93,21 +112,31 @@ def eliminar_jugador(jugador_id: int):
         "mensaje": "Jugador eliminado"
     }
 
-# Muestra los jugadores de la tabla jugadores
+
 @app.get("/jugadores")
 def listar_jugadores():
     conexion = conectar()
     cursor = conexion.cursor()
 
-    cursor.execute("SELECT * FROM jugadores")
+    cursor.execute(
+        """
+        SELECT *
+        FROM jugadores
+        ORDER BY id
+        """
+    )
+
     jugadores = cursor.fetchall()
 
     conexion.close()
 
-    return [dict(jugador) for jugador in jugadores]
+    return jugadores
 
 
-# Crea un partido y lo agrega a la tabla partidos
+# =========================
+# PARTIDOS
+# =========================
+
 @app.post("/partidos")
 def crear_partido(partido: Partido):
     conexion = conectar()
@@ -115,8 +144,10 @@ def crear_partido(partido: Partido):
 
     cursor.execute(
         """
-        INSERT INTO partidos (fecha, goles_a, goles_b)
-        VALUES (?, ?, ?)
+        INSERT INTO partidos
+        (fecha, goles_a, goles_b)
+        VALUES (%s, %s, %s)
+        RETURNING id
         """,
         (
             partido.fecha,
@@ -125,10 +156,9 @@ def crear_partido(partido: Partido):
         )
     )
 
+    partido_id = cursor.fetchone()["id"]
+
     conexion.commit()
-
-    partido_id = cursor.lastrowid
-
     conexion.close()
 
     return {
@@ -137,18 +167,20 @@ def crear_partido(partido: Partido):
         "fecha": partido.fecha,
         "resultado": f"{partido.goles_a} - {partido.goles_b}"
     }
-    
 
-# Agrega una fila a la tabla partido_jugadores con un jugador de la tabla jugadores, un partido de la tabla partidos y se le asigna un lado A o B
+
+# =========================
+# JUGADORES DEL PARTIDO
+# =========================
+
 @app.post("/partidos/{partido_id}/jugadores")
 def agregar_jugador_al_partido(
     partido_id: int,
     jugador_id: int,
     lado: str
 ):
-    
     lado = lado.upper()
-    
+
     if lado not in ["A", "B"]:
         raise HTTPException(
             status_code=400,
@@ -158,9 +190,12 @@ def agregar_jugador_al_partido(
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -171,9 +206,12 @@ def agregar_jugador_al_partido(
             detail="Partido no encontrado"
         )
 
-    # Verificar que el jugador existe
     cursor.execute(
-        "SELECT id FROM jugadores WHERE id = ?",
+        """
+        SELECT id
+        FROM jugadores
+        WHERE id = %s
+        """,
         (jugador_id,)
     )
 
@@ -188,9 +226,13 @@ def agregar_jugador_al_partido(
         """
         INSERT INTO partido_jugadores
         (partido_id, jugador_id, lado)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
         """,
-        (partido_id, jugador_id, lado)
+        (
+            partido_id,
+            jugador_id,
+            lado
+        )
     )
 
     conexion.commit()
@@ -204,15 +246,17 @@ def agregar_jugador_al_partido(
     }
 
 
-# Muestra los jugadores que jugaron un partido y su lado
 @app.get("/partidos/{partido_id}/jugadores")
 def listar_jugadores_del_partido(partido_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -232,7 +276,7 @@ def listar_jugadores_del_partido(partido_id: int):
         FROM partido_jugadores
         JOIN jugadores
         ON partido_jugadores.jugador_id = jugadores.id
-        WHERE partido_jugadores.partido_id = ?
+        WHERE partido_jugadores.partido_id = %s
         """,
         (partido_id,)
     )
@@ -241,18 +285,23 @@ def listar_jugadores_del_partido(partido_id: int):
 
     conexion.close()
 
-    return [dict(jugador) for jugador in jugadores]
+    return jugadores
 
 
-# Elimina una fila de la tabla partidos_jugados
 @app.delete("/partidos/{partido_id}/jugadores/{jugador_id}")
-def eliminar_jugador_del_partido(partido_id: int, jugador_id: int):
+def eliminar_jugador_del_partido(
+    partido_id: int,
+    jugador_id: int
+):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -266,9 +315,13 @@ def eliminar_jugador_del_partido(partido_id: int, jugador_id: int):
     cursor.execute(
         """
         DELETE FROM partido_jugadores
-        WHERE partido_id = ? AND jugador_id = ?
+        WHERE partido_id = %s
+        AND jugador_id = %s
         """,
-        (partido_id, jugador_id)
+        (
+            partido_id,
+            jugador_id
+        )
     )
 
     filas_borradas = cursor.rowcount
@@ -287,7 +340,10 @@ def eliminar_jugador_del_partido(partido_id: int, jugador_id: int):
     }
 
 
-# Agrega un gol a la tabla goles(id, partido, jugador, minuto, lado)
+# =========================
+# GOLES
+# =========================
+
 @app.post("/partidos/{partido_id}/goles")
 def agregar_gol(
     partido_id: int,
@@ -306,9 +362,12 @@ def agregar_gol(
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -319,9 +378,12 @@ def agregar_gol(
             detail="Partido no encontrado"
         )
 
-    # Verificar que el jugador existe
     cursor.execute(
-        "SELECT id FROM jugadores WHERE id = ?",
+        """
+        SELECT id
+        FROM jugadores
+        WHERE id = %s
+        """,
         (jugador_id,)
     )
 
@@ -336,15 +398,20 @@ def agregar_gol(
         """
         INSERT INTO goles
         (partido_id, jugador_id, minuto, lado)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
         """,
-        (partido_id, jugador_id, minuto, lado)
+        (
+            partido_id,
+            jugador_id,
+            minuto,
+            lado
+        )
     )
 
+    gol_id = cursor.fetchone()["id"]
+
     conexion.commit()
-
-    gol_id = cursor.lastrowid
-
     conexion.close()
 
     return {
@@ -357,15 +424,17 @@ def agregar_gol(
     }
 
 
-# Devuelve etsadisticas de un partido 
 @app.get("/partidos/{partido_id}/goles")
 def listar_goles(partido_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -385,7 +454,7 @@ def listar_goles(partido_id: int):
         FROM goles
         JOIN jugadores
         ON goles.jugador_id = jugadores.id
-        WHERE goles.partido_id = ?
+        WHERE goles.partido_id = %s
         ORDER BY goles.minuto
         """,
         (partido_id,)
@@ -395,18 +464,23 @@ def listar_goles(partido_id: int):
 
     conexion.close()
 
-    return [dict(gol) for gol in goles]
+    return goles
 
 
-# Elimina un gol de la tabla goles
 @app.delete("/partidos/{partido_id}/goles/{gol_id}")
-def eliminar_gol(partido_id: int, gol_id: int):
+def eliminar_gol(
+    partido_id: int,
+    gol_id: int
+):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -420,9 +494,13 @@ def eliminar_gol(partido_id: int, gol_id: int):
     cursor.execute(
         """
         DELETE FROM goles
-        WHERE id = ? AND partido_id = ?
+        WHERE id = %s
+        AND partido_id = %s
         """,
-        (gol_id, partido_id)
+        (
+            gol_id,
+            partido_id
+        )
     )
 
     filas_borradas = cursor.rowcount
@@ -439,17 +517,23 @@ def eliminar_gol(partido_id: int, gol_id: int):
     return {
         "mensaje": "Gol eliminado"
     }
-    
 
-# Devuelve los partidos jugados, goles y goles por partido de un jugador
+
+# =========================
+# ESTADISTICAS
+# =========================
+
 @app.get("/jugadores/{jugador_id}/estadisticas")
 def estadisticas_jugador(jugador_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Buscar jugador
     cursor.execute(
-        "SELECT nombre FROM jugadores WHERE id = ?",
+        """
+        SELECT nombre
+        FROM jugadores
+        WHERE id = %s
+        """,
         (jugador_id,)
     )
 
@@ -462,34 +546,35 @@ def estadisticas_jugador(jugador_id: int):
             detail="Jugador no encontrado"
         )
 
-    # Cantidad de partidos
     cursor.execute(
         """
-        SELECT COUNT(*)
+        SELECT COUNT(*) AS cantidad
         FROM partido_jugadores
-        WHERE jugador_id = ?
+        WHERE jugador_id = %s
         """,
         (jugador_id,)
     )
 
-    partidos_jugados = cursor.fetchone()[0]
+    partidos_jugados = cursor.fetchone()["cantidad"]
 
-    # Cantidad de goles
     cursor.execute(
         """
-        SELECT COUNT(*)
+        SELECT COUNT(*) AS cantidad
         FROM goles
-        WHERE jugador_id = ?
+        WHERE jugador_id = %s
         """,
         (jugador_id,)
     )
 
-    goles = cursor.fetchone()[0]
+    goles = cursor.fetchone()["cantidad"]
 
     conexion.close()
 
     if partidos_jugados > 0:
-        goles_por_partido = round(goles / partidos_jugados, 2)
+        goles_por_partido = round(
+            goles / partidos_jugados,
+            2
+        )
     else:
         goles_por_partido = 0
 
@@ -499,8 +584,8 @@ def estadisticas_jugador(jugador_id: int):
         "goles": goles,
         "goles_por_partido": goles_por_partido
     }
-    
-# Devuelve un ranking de goleadores
+
+
 @app.get("/estadisticas/goleadores")
 def ranking_goleadores():
     conexion = conectar()
@@ -523,10 +608,13 @@ def ranking_goleadores():
 
     conexion.close()
 
-    return [dict(jugador) for jugador in goleadores]
+    return goleadores
 
 
-# Devuelve historial BASICO de partidos
+# =========================
+# HISTORIAL
+# =========================
+
 @app.get("/partidos")
 def listar_partidos():
     conexion = conectar()
@@ -544,22 +632,19 @@ def listar_partidos():
 
     conexion.close()
 
-    return [dict(partido) for partido in partidos]
+    return partidos
 
 
-
-# Devuelve historial COMPLETO de partidos
 @app.get("/partidos/{partido_id}")
 def detalle_partido(partido_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Buscar el partido
     cursor.execute(
         """
         SELECT *
         FROM partidos
-        WHERE id = ?
+        WHERE id = %s
         """,
         (partido_id,)
     )
@@ -573,7 +658,6 @@ def detalle_partido(partido_id: int):
             detail="Partido no encontrado"
         )
 
-    # Buscar jugadores del partido
     cursor.execute(
         """
         SELECT jugadores.id,
@@ -582,14 +666,13 @@ def detalle_partido(partido_id: int):
         FROM partido_jugadores
         JOIN jugadores
         ON partido_jugadores.jugador_id = jugadores.id
-        WHERE partido_jugadores.partido_id = ?
+        WHERE partido_jugadores.partido_id = %s
         """,
         (partido_id,)
     )
 
     jugadores = cursor.fetchall()
 
-    # Buscar goles
     cursor.execute(
         """
         SELECT goles.id,
@@ -599,7 +682,7 @@ def detalle_partido(partido_id: int):
         FROM goles
         JOIN jugadores
         ON goles.jugador_id = jugadores.id
-        WHERE goles.partido_id = ?
+        WHERE goles.partido_id = %s
         ORDER BY goles.minuto
         """,
         (partido_id,)
@@ -613,6 +696,7 @@ def detalle_partido(partido_id: int):
     equipo_b = []
 
     for jugador in jugadores:
+
         datos = {
             "id": jugador["id"],
             "nombre": jugador["nombre"]
@@ -634,18 +718,25 @@ def detalle_partido(partido_id: int):
             "A": equipo_a,
             "B": equipo_b
         },
-        "goles": [dict(gol) for gol in goles]
+        "goles": goles
     }
-    
-# Elimina un partido, sus goles y jugadores asociados
+
+
+# =========================
+# ELIMINAR PARTIDO
+# =========================
+
 @app.delete("/partidos/{partido_id}")
 def eliminar_partido(partido_id: int):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Verificar que el partido existe
     cursor.execute(
-        "SELECT id FROM partidos WHERE id = ?",
+        """
+        SELECT id
+        FROM partidos
+        WHERE id = %s
+        """,
         (partido_id,)
     )
 
@@ -656,29 +747,26 @@ def eliminar_partido(partido_id: int):
             detail="Partido no encontrado"
         )
 
-    # Borrar goles del partido
     cursor.execute(
         """
         DELETE FROM goles
-        WHERE partido_id = ?
+        WHERE partido_id = %s
         """,
         (partido_id,)
     )
 
-    # Borrar jugadores asociados al partido
     cursor.execute(
         """
         DELETE FROM partido_jugadores
-        WHERE partido_id = ?
+        WHERE partido_id = %s
         """,
         (partido_id,)
     )
 
-    # Borrar el partido
     cursor.execute(
         """
         DELETE FROM partidos
-        WHERE id = ?
+        WHERE id = %s
         """,
         (partido_id,)
     )

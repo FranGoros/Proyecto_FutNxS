@@ -1,9 +1,13 @@
-import sqlite3
+import os
+import psycopg
+from psycopg.rows import dict_row
 
 
 def conectar():
-    conexion = sqlite3.connect("futbol5.db")
-    conexion.row_factory = sqlite3.Row
+    conexion = psycopg.connect(
+        os.environ["DATABASE_URL"],
+        row_factory=dict_row
+    )
     return conexion
 
 
@@ -13,14 +17,14 @@ def crear_tablas():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jugadores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             nombre TEXT NOT NULL
         )
     """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS partidos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             fecha TEXT NOT NULL,
             goles_a INTEGER NOT NULL,
             goles_b INTEGER NOT NULL
@@ -29,7 +33,7 @@ def crear_tablas():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS partido_jugadores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             partido_id INTEGER NOT NULL,
             jugador_id INTEGER NOT NULL,
             lado TEXT NOT NULL,
@@ -40,7 +44,7 @@ def crear_tablas():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS goles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             partido_id INTEGER NOT NULL,
             jugador_id INTEGER NOT NULL,
             minuto INTEGER NOT NULL,
