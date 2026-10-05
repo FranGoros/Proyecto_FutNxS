@@ -5,6 +5,12 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Fútbol 5 Stats")
 
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5500"],
