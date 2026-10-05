@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FutNxS</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>⚽ FutNxS ⚽</h1>
+        <p>Estadísticas de Fútbol 5</p>
+    </header>
+
+
+    <main>
+
+
+        <!-- CREAR PARTIDO -->
+
+        <div class="card">
+
+            <div class="titulo-panel">
+                <img src="img/partido.png" alt="Partido">
+                <h2>Nuevo partido</h2>
+            </div>
+
+            <p>Registrá un nuevo partido de fútbol 5.</p>
+
+            <button onclick="mostrarFormularioPartido()">
+                Crear partido
+            </button>
+
+
+            <div
+                id="formulario-partido"
+                style="display: none; margin-top: 15px;"
+            >
+
+                <h3>Datos del partido</h3>
+
+                <label>Fecha:</label>
+
+                <input
+                    type="date"
+                    id="fecha-partido"
+                >
+
+                <br><br>
+
+
+                <label>Goles equipo A:</label>
+
+                <input
+                    type="number"
+                    id="goles-a"
+                    min="0"
+                    value="0"
+                >
+
+                <br><br>
+
+
+                <label>Goles equipo B:</label>
+
+                <input
+                    type="number"
+                    id="goles-b"
+                    min="0"
+                    value="0"
+                >
+
+                <br><br>
+
+
+                <button onclick="crearPartido()">
+                    Crear partido
+                </button>
+
+                <button onclick="ocultarFormularioPartido()">
+                    Cancelar
+                </button>
+
+            </div>
+
+
+            <div id="mensaje-partido"></div>
+
+
+            <!-- JUGADORES DEL PARTIDO -->
+
+            <div
+                id="asignacion-jugadores"
+                style="display: none; margin-top: 25px;"
+            >
+
+                <h3>Jugadores del partido</h3>
+
+                <p>
+                    Elegí qué jugadores van a cada equipo.
+                </p>
+
+
+                <h4>🔵 Equipo A</h4>
+
+                <select id="jugador-equipo-a">
+
+                    <option value="">
+                        Seleccionar jugador
+                    </option>
+
+                </select>
+
+                <button onclick="agregarJugadorAlPartido('A')">
+                    Agregar a A
+                </button>
+
+                <div id="lista-equipo-a"></div>
+
+
+                <hr>
+
+
+                <h4>🔴 Equipo B</h4>
+
+                <select id="jugador-equipo-b">
+
+                    <option value="">
+                        Seleccionar jugador
+                    </option>
+
+                </select>
+
+                <button onclick="agregarJugadorAlPartido('B')">
+                    Agregar a B
+                </button>
+
+                <div id="lista-equipo-b"></div>
+
+
+                <!-- GOLES -->
+
+                <hr>
+
+                <h3>⚽ Goles del partido</h3>
+
+                <p>
+                    Registrá los goles individuales si querés llevar
+                    estadísticas de goleadores.
+                </p>
+
+
+                <label>Equipo:</label>
+
+                <select
+                    id="lado-gol"
+                    onchange="cargarJugadoresParaGol()"
+                >
+
+                    <option value="A">
+                        Equipo A
+                    </option>
+
+                    <option value="B">
+                        Equipo B
+                    </option>
+
+                </select>
+
+                <br><br>
+
+
+                <label>Jugador:</label>
+
+                <select id="jugador-gol">
+
+                    <option value="">
+                        Seleccionar jugador
+                    </option>
+
+                </select>
+
+                <br><br>
+
+
+                <label>Minuto:</label>
+
+                <input
+                    type="number"
+                    id="minuto-gol"
+                    min="0"
+                    max="120"
+                    placeholder="Ej: 15"
+                >
+
+                <br><br>
+
+
+                <button onclick="agregarGol()">
+                    ⚽ Registrar gol
+                </button>
+
+
+                <div
+                    id="lista-goles"
+                    style="margin-top: 15px;"
+                >
+                </div>
+
+
+                <br>
+
+                <button onclick="finalizarPartido()">
+                    Terminar partido
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- JUGADORES -->
+
+        <div class="card">
+
+            <div class="titulo-panel">
+                <img src="img/jugador.png" alt="Jugador">
+                <h2>Jugadores</h2>
+            </div>
+
+            <p>
+                Administrá los jugadores de FutNxS.
+            </p>
+
+            <button onclick="mostrarFormularioJugador()">
+                Agregar jugador
+            </button>
+
+            <button onclick="mostrarJugadores()">
+                Ver jugadores
+            </button>
+
+
+            <div
+                id="formulario-jugador"
+                style="display: none; margin-top: 15px;"
+            >
+
+                <input
+                    type="text"
+                    id="nombre-jugador"
+                    placeholder="Nombre del jugador"
+                >
+
+                <button onclick="agregarJugador()">
+                    Guardar
+                </button>
+
+                <button onclick="ocultarFormularioJugador()">
+                    Cancelar
+                </button>
+
+            </div>
+
+
+            <div id="lista-jugadores"></div>
+
+        </div>
+
+
+        <!-- ESTADISTICAS -->
+
+        <div class="card">
+
+            <div class="titulo-panel">
+                <img src="img/estadisticas.png" alt="Estadísticas">
+                <h2>📊 Estadísticas</h2>
+            </div>
+
+            <p>
+                Consultá las estadísticas de los jugadores.
+            </p>
+
+            <button onclick="mostrarEstadisticas()">
+                Ver estadísticas
+            </button>
+
+
+            <div
+                id="estadisticas"
+                style="display: none; margin-top: 20px;"
+            >
+
+                <h3>🏆 Ranking de goleadores</h3>
+
+                <div id="ranking-goleadores"></div>
+
+
+                <hr>
+
+
+                <h3>👤 Estadísticas de jugadores</h3>
+
+                <div id="estadisticas-jugadores"></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- HISTORIAL -->
+
+        <div class="card">
+
+            <div class="titulo-panel">
+                <img src="img/historial.png" alt="Historial">
+                <h2>📜 Historial</h2>
+            </div>
+
+            <p>
+                Revisá los partidos anteriores.
+            </p>
+
+            <button onclick="mostrarHistorial()">
+                Ver historial
+            </button>
+
+
+            <div
+                id="historial"
+                style="display: none; margin-top: 20px;"
+            >
+
+                <div id="lista-historial"></div>
+
+            </div>
+
+        </div>
+
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
