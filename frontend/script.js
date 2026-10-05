@@ -1,3 +1,5 @@
+const API = "https://futnxs.onrender.com";
+
 let partidoActualId = null;
 
 
@@ -25,7 +27,7 @@ async function mostrarJugadores() {
 
 
     const respuesta = await fetch(
-        "http://127.0.0.1:8000/jugadores"
+        `${API}/jugadores`
     );
 
 
@@ -81,7 +83,7 @@ async function agregarJugador() {
 
 
     const respuesta = await fetch(
-        "http://127.0.0.1:8000/jugadores",
+        `${API}/jugadores`,
         {
             method: "POST",
 
@@ -184,7 +186,7 @@ async function crearPartido() {
 
 
     const respuesta = await fetch(
-        "http://127.0.0.1:8000/partidos",
+        `${API}/partidos`,
         {
             method: "POST",
 
@@ -258,7 +260,7 @@ async function crearPartido() {
 async function cargarJugadoresParaPartido() {
 
     const respuesta = await fetch(
-        "http://127.0.0.1:8000/jugadores"
+        `${API}/jugadores`
     );
 
 
@@ -372,7 +374,7 @@ async function agregarJugadorAlPartido(lado) {
 
     const respuesta = await fetch(
 
-        `http://127.0.0.1:8000/partidos/${partidoActualId}/jugadores?${parametros}`,
+        `${API}/partidos/${partidoActualId}/jugadores?${parametros}`,
 
         {
             method: "POST"
@@ -417,7 +419,7 @@ async function cargarJugadoresDelPartido() {
 
     const respuesta = await fetch(
 
-        `http://127.0.0.1:8000/partidos/${partidoActualId}/jugadores`
+        `${API}/partidos/${partidoActualId}/jugadores`
 
     );
 
@@ -480,7 +482,7 @@ async function cargarJugadoresParaGol() {
 
     const respuesta = await fetch(
 
-        `http://127.0.0.1:8000/partidos/${partidoActualId}/jugadores`
+        `${API}/partidos/${partidoActualId}/jugadores`
 
     );
 
@@ -596,7 +598,7 @@ async function agregarGol() {
 
     const respuesta = await fetch(
 
-        `http://127.0.0.1:8000/partidos/${partidoActualId}/goles?${parametros}`,
+        `${API}/partidos/${partidoActualId}/goles?${parametros}`,
 
         {
             method: "POST"
@@ -651,7 +653,7 @@ async function cargarGoles() {
 
     const respuesta = await fetch(
 
-        `http://127.0.0.1:8000/partidos/${partidoActualId}/goles`
+        `${API}/partidos/${partidoActualId}/goles`
 
     );
 
@@ -737,7 +739,7 @@ async function cargarRankingGoleadores() {
 
     const respuesta = await fetch(
 
-        "http://127.0.0.1:8000/estadisticas/goleadores"
+        `${API}/estadisticas/goleadores`
 
     );
 
@@ -791,7 +793,7 @@ async function cargarEstadisticasJugadores() {
 
     const respuesta =
         await fetch(
-            "http://127.0.0.1:8000/jugadores"
+            `${API}/jugadores`
         );
 
 
@@ -822,7 +824,7 @@ async function cargarEstadisticasJugadores() {
         const respuestaEstadisticas =
             await fetch(
 
-                `http://127.0.0.1:8000/jugadores/${jugador.id}/estadisticas`
+                `${API}/jugadores/${jugador.id}/estadisticas`
 
             );
 
@@ -898,7 +900,7 @@ async function cargarHistorial() {
 
     const respuesta =
         await fetch(
-            "http://127.0.0.1:8000/partidos"
+            `${API}/partidos`
         );
 
 
@@ -985,7 +987,7 @@ async function verDetallePartido(partidoId) {
     const respuesta =
         await fetch(
 
-            `http://127.0.0.1:8000/partidos/${partidoId}`
+            `${API}/partidos/${partidoId}`
 
         );
 
@@ -1153,6 +1155,7 @@ function finalizarPartido() {
         "Partido guardado correctamente."
     );
 }
+
 
 // ========================================
 // ANIMACION DE PANELES
