@@ -802,6 +802,8 @@ def eliminar_partido(partido_id: int):
 # MODIFICAR PARTIDO
 # =========================
 
+# Endpoint para modificar completamente un partido
+@app.put("/partidos/{partido_id}")
 @app.put("/partidos/{partido_id}")
 def modificar_partido(
     partido_id: int,
