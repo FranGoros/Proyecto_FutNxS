@@ -35,9 +35,9 @@ header {
     background:
         linear-gradient(
             90deg,
-            #050505,
-            #070703,
-            #dfbd01
+            #000000,
+            #9e6700d2,
+            #ffe600
         );
 
     padding: 28px 55px;
@@ -348,9 +348,9 @@ main {
     opacity: 0.48;
 
     filter:
-        contrast(1.18)
-        brightness(1)
-        saturate(1.2)
+        contrast(1.10)
+        brightness(1.5)
+        saturate(1.6)
         drop-shadow(
             0 10px 25px rgba(0,0,0,0.95)
         );
@@ -440,7 +440,7 @@ button {
 
     z-index: 10;
 
-    background: #b7d600;
+    background: #ffd000;
 
     color: #111;
 
@@ -478,7 +478,7 @@ button:hover {
         translateY(-3px);
 
     box-shadow:
-        0 7px 20px rgba(183,214,0,0.35);
+        0 7px 20px rgba(201, 171, 0, 0.918);
 }
 
 button:active {
@@ -516,7 +516,7 @@ select:focus {
     border-color: #dfbd01;
 
     box-shadow:
-        0 0 10px rgba(183,214,0,0.2);
+        0 0 10px rgba(214, 182, 0, 0.2);
 }
 
 input::placeholder {
@@ -838,4 +838,16 @@ hr {
 
         margin-top: 5px;
     }
+}
+
+.fut {
+    color: #000;
+    -webkit-text-stroke: 2px white;
+    text-shadow: 3px 3px 0 #555;
+}
+
+.nxs {
+    color: #e00000;
+    -webkit-text-stroke: 1px #000;
+    text-shadow: 3px 3px 0 #000;
 }

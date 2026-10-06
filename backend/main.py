@@ -37,6 +37,25 @@ class Partido(BaseModel):
     goles_b: int
 
 
+class JugadorPartidoModificar(BaseModel):
+    jugador_id: int
+    lado: str
+
+
+class GolModificar(BaseModel):
+    jugador_id: int
+    minuto: int
+    lado: str
+
+
+class PartidoModificar(BaseModel):
+    fecha: str
+    goles_a: int
+    goles_b: int
+    jugadores: list[JugadorPartidoModificar]
+    goles: list[GolModificar]
+
+
 # =========================
 # INICIO
 # =========================
@@ -448,6 +467,7 @@ def listar_goles(partido_id: int):
     cursor.execute(
         """
         SELECT goles.id,
+               goles.jugador_id,
                jugadores.nombre,
                goles.minuto,
                goles.lado
@@ -777,3 +797,182 @@ def eliminar_partido(partido_id: int):
     return {
         "mensaje": "Partido eliminado correctamente"
     }
+
+# =========================
+# MODIFICAR PARTIDO
+# =========================
+
+@app.put("/partidos/{partido_id}")
+def modificar_partido(
+    partido_id: int,
+    partido: PartidoModificar
+):
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    try:
+
+        # Verificar que exista el partido
+        cursor.execute(
+            """
+            SELECT id
+            FROM partidos
+            WHERE id = %s
+            """,
+            (partido_id,)
+        )
+
+        if cursor.fetchone() is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Partido no encontrado"
+            )
+
+        # Validar resultado
+        if partido.goles_a < 0 or partido.goles_b < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Los goles no pueden ser negativos"
+            )
+
+        # Actualizar fecha y resultado
+        cursor.execute(
+            """
+            UPDATE partidos
+            SET fecha = %s,
+                goles_a = %s,
+                goles_b = %s
+            WHERE id = %s
+            """,
+            (
+                partido.fecha,
+                partido.goles_a,
+                partido.goles_b,
+                partido_id
+            )
+        )
+
+        # Borrar jugadores anteriores
+        cursor.execute(
+            """
+            DELETE FROM partido_jugadores
+            WHERE partido_id = %s
+            """,
+            (partido_id,)
+        )
+
+        # Volver a cargar jugadores
+        for jugador in partido.jugadores:
+
+            lado = jugador.lado.upper()
+
+            if lado not in ["A", "B"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="El lado debe ser A o B"
+                )
+
+            cursor.execute(
+                """
+                SELECT id
+                FROM jugadores
+                WHERE id = %s
+                """,
+                (jugador.jugador_id,)
+            )
+
+            if cursor.fetchone() is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Jugador no encontrado"
+                )
+
+            cursor.execute(
+                """
+                INSERT INTO partido_jugadores
+                (partido_id, jugador_id, lado)
+                VALUES (%s, %s, %s)
+                """,
+                (
+                    partido_id,
+                    jugador.jugador_id,
+                    lado
+                )
+            )
+
+        # Borrar goles anteriores
+        cursor.execute(
+            """
+            DELETE FROM goles
+            WHERE partido_id = %s
+            """,
+            (partido_id,)
+        )
+
+        # Volver a cargar goles
+        for gol in partido.goles:
+
+            lado = gol.lado.upper()
+
+            if lado not in ["A", "B"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="El lado debe ser A o B"
+                )
+
+            if gol.minuto < 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="El minuto no puede ser negativo"
+                )
+
+            cursor.execute(
+                """
+                SELECT id
+                FROM jugadores
+                WHERE id = %s
+                """,
+                (gol.jugador_id,)
+            )
+
+            if cursor.fetchone() is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Jugador del gol no encontrado"
+                )
+
+            cursor.execute(
+                """
+                INSERT INTO goles
+                (partido_id, jugador_id, minuto, lado)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    partido_id,
+                    gol.jugador_id,
+                    gol.minuto,
+                    lado
+                )
+            )
+
+        conexion.commit()
+
+        return {
+            "mensaje": "Partido modificado correctamente",
+            "id": partido_id
+        }
+
+    except HTTPException:
+        conexion.rollback()
+        raise
+
+    except Exception as error:
+        conexion.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error)
+        )
+
+    finally:
+        conexion.close()
