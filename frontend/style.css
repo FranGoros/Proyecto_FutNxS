@@ -105,7 +105,7 @@ main {
             #151515 100%
         );
 
-    border-left: 6px solid #555;
+    border-left: 2px solid #555;
 
     box-shadow:
         0 12px 35px rgba(255, 254, 254, 0.164);
@@ -202,7 +202,6 @@ main {
 ======================================== */
 
 .card.seleccionado {
-    transform: translateX(12px);
 
     border-left-color: #dfbd01;
 
@@ -356,7 +355,7 @@ main {
 .card.seleccionado .titulo-panel img {
     transform:
         translate(-50%, -50%)
-        scale(1.17);
+        scale(1.27);
 
 
     filter:
@@ -381,7 +380,7 @@ main {
 
     font-size: 53px;
 
-    font-weight: 800;
+    font-weight: 600;
 
     letter-spacing: 3px;
 
